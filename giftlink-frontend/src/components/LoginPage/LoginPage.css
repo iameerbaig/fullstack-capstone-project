@@ -1,0 +1,30 @@
+.login-card {
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+}
+
+.login-card h2 {
+    color: #2c3e50;
+}
+
+.login-card .form-label {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.login-card .form-control {
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.login-card .form-control:focus {
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
+}
+
+.login-card .btn-primary {
+    font-weight: 700;
+    padding: 10px 0;
+    border-radius: 24px;
+}

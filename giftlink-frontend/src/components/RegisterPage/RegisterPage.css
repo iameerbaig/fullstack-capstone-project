@@ -1,0 +1,30 @@
+.register-card {
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+}
+
+.register-card h2 {
+    color: #2c3e50;
+}
+
+.register-card .form-label {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.register-card .form-control {
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.register-card .form-control:focus {
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
+}
+
+.register-card .btn-primary {
+    font-weight: 700;
+    padding: 10px 0;
+    border-radius: 24px;
+}
