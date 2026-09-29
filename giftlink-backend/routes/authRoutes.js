@@ -1,6 +1,9 @@
 const express = require('express');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { ObjectId } = require('mongodb');
+// Task 1: Use `body` and `validationResult` from `express-validator` for input validation
+const { body, validationResult } = require('express-validator');
 const connectToDatabase = require('../models/db');
 const router = express.Router();
 const dotenv = require('dotenv');
@@ -124,6 +127,73 @@ router.post('/login', async (req, res) => {
         // Task 6: Return the token, user name and email
         logger.info('User logged in successfully');
         return res.status(200).json({ authtoken, userName: theUser.firstName, userEmail: theUser.email });
+    } catch (e) {
+        logger.error(e);
+        return res.status(500).send('Internal server error');
+    }
+});
+
+// Update the logged-in user's profile
+router.put('/update', [body('name').isString().trim().notEmpty().isLength({ max: 100 })], async (req, res) => {
+    try {
+        // Identify the caller from the Bearer token, not from a client-supplied email
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        let userId;
+        try {
+            userId = jwt.verify(token, JWT_SECRET).user.id;
+        } catch (err) {
+            logger.error('Update rejected: missing or invalid token');
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // Task 2: Validate the input using `validationResult` and return an appropriate message on error
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            logger.error('Validation errors in update request', errors.array());
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const { name } = req.body;
+
+        // Task 3: Check that `email` is present in the header
+        const email = req.headers.email;
+        if (!email) {
+            logger.error('Email not found in the request headers');
+            return res.status(400).json({ error: 'Email not found in the request headers' });
+        }
+
+        // Task 4: Connect to MongoDB and get the users collection
+        const db = await connectToDatabase();
+        const collection = db.collection("users");
+
+        // Task 5: Find the user credentials in the database, and make sure the email belongs to the token's user
+        const existingUser = await collection.findOne({ _id: new ObjectId(userId) });
+        if (!existingUser) {
+            logger.error('Update rejected: user not found');
+            return res.status(404).json({ error: 'User not found' });
+        }
+        if (existingUser.email !== email) {
+            logger.error('Update rejected: email does not match the logged-in user');
+            return res.status(403).json({ error: 'Email does not match the logged-in user' });
+        }
+
+        // Task 6: Update the user credentials in the database
+        const updatedUser = await collection.findOneAndUpdate(
+            { _id: existingUser._id },
+            { $set: { firstName: name.trim(), updatedAt: new Date() } },
+            { returnDocument: 'after' }
+        );
+
+        // Task 7: Create a new JWT authentication token with the user's id as payload
+        const payload = {
+            user: {
+                id: updatedUser._id.toString(),
+            },
+        };
+        const authtoken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
+
+        logger.info('User updated successfully');
+        return res.json({ authtoken });
     } catch (e) {
         logger.error(e);
         return res.status(500).send('Internal server error');
