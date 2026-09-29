@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 
 import './RegisterPage.css';
+import { urlConfig } from '../../config';
+import { useAppContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
 
@@ -10,9 +13,52 @@ function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    // Task 1: Include a state for error message.
+    const [showerr, setShowerr] = useState('');
+
+    // Task 2: Create a local variable for `navigate` and `setIsLoggedIn`.
+    const navigate = useNavigate();
+    const { setIsLoggedIn } = useAppContext();
+
     // Create handleRegister function and include console.log
     const handleRegister = async () => {
-        console.log("Register invoked");
+        try {
+            // Task 3: Make a POST call to the backend register API with the form values.
+            const response = await fetch(`${urlConfig.backendUrl}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    password: password,
+                }),
+            });
+
+            // Task 4: Access the data coming from the fetch API.
+            const json = await response.json();
+
+            if (json.authtoken) {
+                // Task 5: Set user details in session storage.
+                sessionStorage.setItem('auth-token', json.authtoken);
+                sessionStorage.setItem('name', firstName);
+                sessionStorage.setItem('email', json.email);
+
+                // Task 6: Set the user's login status to true and redirect to the main page.
+                setIsLoggedIn(true);
+                navigate('/app');
+            }
+
+            if (json.error) {
+                // Task 7: Set an error message if the registration fails.
+                setShowerr(json.error);
+            }
+        } catch (e) {
+            console.log("Error fetching details: " + e.message);
+            setShowerr('Could not reach the server. Please try again.');
+        }
     };
 
          return (
@@ -55,8 +101,13 @@ function RegisterPage() {
                             className="form-control"
                             placeholder="Enter your email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                setShowerr('');
+                            }}
                         />
+                        {/* Task 8: Display an error message below the email input, if any. */}
+                        {showerr && <div className="text-danger">{showerr}</div>}
                     </div>
 
                     <div className="mb-4">

@@ -11,6 +11,22 @@ dotenv.config();
 
 // Create JWT secret from the .env file
 const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    // Fail at startup, not on the first signup
+    throw new Error('JWT_SECRET is not set. Add it to the .env file.');
+}
+
+// Make sure two users can never register with the same email, even with simultaneous requests
+let emailIndexReady = null;
+const ensureEmailIndex = (collection) => {
+    if (!emailIndexReady) {
+        emailIndexReady = collection.createIndex({ email: 1 }, { unique: true }).catch((e) => {
+            emailIndexReady = null;
+            throw e;
+        });
+    }
+    return emailIndexReady;
+};
 
 // Register a new user
 router.post('/register', async (req, res) => {
@@ -24,6 +40,7 @@ router.post('/register', async (req, res) => {
         // Task 2: Connect to MongoDB and get the users collection
         const db = await connectToDatabase();
         const collection = db.collection("users");
+        await ensureEmailIndex(collection);
 
         // Task 3: Check for an existing user with the same email
         const existingEmail = await collection.findOne({ email: email });
@@ -37,13 +54,23 @@ router.post('/register', async (req, res) => {
         const hash = await bcryptjs.hash(password, salt);
 
         // Task 5: Save the user details in the database
-        const newUser = await collection.insertOne({
-            email: email,
-            firstName: firstName,
-            lastName: lastName,
-            password: hash,
-            createdAt: new Date(),
-        });
+        let newUser;
+        try {
+            newUser = await collection.insertOne({
+                email: email,
+                firstName: firstName,
+                lastName: lastName,
+                password: hash,
+                createdAt: new Date(),
+            });
+        } catch (err) {
+            if (err.code === 11000) {
+                // A simultaneous request registered the same email first
+                logger.error('Email id already exists');
+                return res.status(400).json({ error: 'Email id already exists' });
+            }
+            throw err;
+        }
 
         // Task 6: Create a JWT authentication token using the new user's id
         const payload = {
@@ -51,7 +78,7 @@ router.post('/register', async (req, res) => {
                 id: newUser.insertedId.toString(),
             },
         };
-        const authtoken = jwt.sign(payload, JWT_SECRET);
+        const authtoken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
         logger.info('User registered successfully');
         // Task 7: Return the token and the email
