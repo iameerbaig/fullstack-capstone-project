@@ -66,14 +66,28 @@ const handleSubmit = async (e) => {
     const payload = { ...updatedDetails };
     const response = await fetch(`${urlConfig.backendUrl}/api/auth/update`, {
       //Step 1: Task 1
+      method: "PUT",
       //Step 1: Task 2
+      headers: {
+        "Authorization": `Bearer ${authtoken}`,
+        "Content-Type": "application/json",
+        "Email": email,
+      },
       //Step 1: Task 3
+      body: JSON.stringify(payload),
     });
 
     if (response.ok) {
       // Update the user details in session storage
       //Step 1: Task 4
+      setUserName(updatedDetails.name);
       //Step 1: Task 5
+      sessionStorage.setItem("name", updatedDetails.name);
+      // Keep the fresh token returned by the backend
+      const json = await response.json();
+      if (json.authtoken) {
+        sessionStorage.setItem("auth-token", json.authtoken);
+      }
       setUserDetails(updatedDetails);
       setEditMode(false);
       // Display success message to the user
