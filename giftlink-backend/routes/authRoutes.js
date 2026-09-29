@@ -19,6 +19,10 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not set. Add it to the .env file.');
 }
 
+// A fixed hash to compare against when the email is unknown, so an unknown email and a wrong
+// password take the same time and the response time does not reveal which emails are registered
+const DUMMY_HASH = bcryptjs.hashSync('not-a-real-password', 10);
+
 // Make sure two users can never register with the same email, even with simultaneous requests
 let emailIndexReady = null;
 const ensureEmailIndex = (collection) => {
@@ -110,7 +114,8 @@ router.post('/login', async (req, res) => {
 
         // Task 4: Compare the password with the stored hash. The same message is used for an unknown
         // email and a wrong password, so the response does not reveal which emails are registered.
-        const passwordMatches = theUser ? await bcryptjs.compare(password, theUser.password) : false;
+        const passwordCheck = await bcryptjs.compare(password, theUser ? theUser.password : DUMMY_HASH);
+        const passwordMatches = Boolean(theUser) && passwordCheck;
         if (!passwordMatches) {
             logger.error('Invalid login attempt');
             return res.status(401).json({ error: 'Invalid email or password' });

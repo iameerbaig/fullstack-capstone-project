@@ -9,6 +9,7 @@ const Profile = () => {
  const [updatedDetails, setUpdatedDetails] = useState({});
  const {setUserName} = useAppContext();
  const [changed, setChanged] = useState("");
+ const [errorMessage, setErrorMessage] = useState("");
 
  const [editMode, setEditMode] = useState(false);
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const Profile = () => {
 };
 
 const handleEdit = () => {
+setErrorMessage("");
 setEditMode(true);
 };
 
@@ -53,6 +55,7 @@ setUpdatedDetails({
 };
 const handleSubmit = async (e) => {
   e.preventDefault();
+  setErrorMessage("");
 
   try {
     const authtoken = sessionStorage.getItem("auth-token");
@@ -103,7 +106,8 @@ const handleSubmit = async (e) => {
     }
   } catch (error) {
     console.error(error);
-    // Handle error case
+    // Handle error case: show the message to the user
+    setErrorMessage("Could not update your name. Please try again.");
   }
 };
 
@@ -131,6 +135,7 @@ return (
 </label>
 
 <button type="submit">Save</button>
+{errorMessage && <span style={{color:'red',display:'block',fontStyle:'italic',fontSize:'12px'}}>{errorMessage}</span>}
 </form>
 ) : (
 <div className="profile-details">
