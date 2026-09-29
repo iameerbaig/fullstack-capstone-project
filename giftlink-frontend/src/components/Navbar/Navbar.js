@@ -15,6 +15,9 @@ export default function Navbar() {
                     <li className="nav-item">
                         <Link className="nav-link" to="/app">Gifts</Link> {/* Link to MainPage */}
                     </li>
+                    <li className="nav-item">
+                        <Link className="nav-link" to="/app/search">Search</Link> {/* Link to SearchPage */}
+                    </li>
                 </ul>
             </div>
         </nav>
