@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const connectToDatabase = require('../models/db');
 
+// Escape regex metacharacters so user input is matched literally (prevents ReDoS)
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Search for gifts
 router.get('/', async (req, res, next) => {
     try {
@@ -14,19 +17,21 @@ router.get('/', async (req, res, next) => {
         let query = {};
 
         // Add the name filter to the query if the name parameter is not empty
-        if (req.query.name && req.query.name.trim() !== '') {
-            query.name = { $regex: req.query.name, $options: "i" }; // Using regex for partial match, case-insensitive
+        // Coerce query values to strings so operators like ?category[$ne]=x cannot be injected
+        const name = String(req.query.name || '');
+        if (name.trim() !== '') {
+            query.name = { $regex: escapeRegex(name), $options: "i" }; // Using regex for partial match, case-insensitive
         }
 
         // Task 3: Add other filters to the query
         if (req.query.category) {
-            query.category = req.query.category;
+            query.category = String(req.query.category);
         }
         if (req.query.condition) {
-            query.condition = req.query.condition;
+            query.condition = String(req.query.condition);
         }
         if (req.query.age_years) {
-            query.age_years = { $lte: parseInt(req.query.age_years) };
+            query.age_years = { $lte: parseInt(String(req.query.age_years), 10) };
         }
 
         // Task 4: Fetch filtered gifts using the find(query) method. Make sure to use await and store the result in the `gifts` constant
