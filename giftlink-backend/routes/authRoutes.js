@@ -89,4 +89,45 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// Login an existing user
+router.post('/login', async (req, res) => {
+    try {
+        // Task 1: Read and validate the login details (values must be non-empty strings)
+        const { email, password } = req.body;
+        if ([email, password].some(v => typeof v !== 'string' || v.trim() === '')) {
+            return res.status(400).json({ error: 'email and password are required' });
+        }
+
+        // Task 2: Connect to MongoDB and get the users collection
+        const db = await connectToDatabase();
+        const collection = db.collection("users");
+
+        // Task 3: Find the user by email
+        const theUser = await collection.findOne({ email: email });
+
+        // Task 4: Compare the password with the stored hash. The same message is used for an unknown
+        // email and a wrong password, so the response does not reveal which emails are registered.
+        const passwordMatches = theUser ? await bcryptjs.compare(password, theUser.password) : false;
+        if (!passwordMatches) {
+            logger.error('Invalid login attempt');
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Task 5: Create a JWT authentication token using the user's id
+        const payload = {
+            user: {
+                id: theUser._id.toString(),
+            },
+        };
+        const authtoken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
+
+        // Task 6: Return the token, user name and email
+        logger.info('User logged in successfully');
+        return res.status(200).json({ authtoken, userName: theUser.firstName, userEmail: theUser.email });
+    } catch (e) {
+        logger.error(e);
+        return res.status(500).send('Internal server error');
+    }
+});
+
 module.exports = router;
