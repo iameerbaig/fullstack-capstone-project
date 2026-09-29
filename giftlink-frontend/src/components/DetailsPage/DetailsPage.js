@@ -93,19 +93,19 @@ return (
                         )}
                     </div>
                     {/* Task 6: Display gift details */}
-                    	<p><strong>Category:</strong> 
+                    	<p><strong>Category:</strong>{' '}
 				{gift.category}
 			</p>
-                    	<p><strong>Condition:</strong> 
+                    	<p><strong>Condition:</strong>{' '}
 				{gift.condition}
                     	</p>
-                    	<p><strong>Date Added:</strong> 
+                    	<p><strong>Date Added:</strong>{' '}
 				{new Date(gift.date_added * 1000).toLocaleDateString()}
                         </p>
-                    	<p><strong>Age (Years):</strong> 
+                    	<p><strong>Age (Years):</strong>{' '}
 				{gift.age_years}
                     	</p>
-                    	<p><strong>Description:</strong> 
+                    	<p><strong>Description:</strong>{' '}
 				{gift.description}
                     	</p>
                 </div>
